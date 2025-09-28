@@ -1,0 +1,37 @@
+name: Hourly Code Commit
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # каждый час
+  workflow_dispatch:
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate random code
+        run: |
+          mkdir -p snippets
+          LANGS=("py" "java" "js")
+          EXT=${LANGS[$((RANDOM % ${#LANGS[@]}))]}
+          FILE="snippets/snippet_$(date -u +%Y%m%d_%H%M).$EXT"
+
+          if [ "$EXT" = "py" ]; then
+            echo "print('Hello from $(date -u)!')" > $FILE
+          elif [ "$EXT" = "java" ]; then
+            CLASS="Snippet$(date +%H%M)"
+            echo "public class $CLASS { public static void main(String[] a){ System.out.println(\"Hello from $(date -u)!\"); } }" > $FILE
+          else
+            echo "console.log('Hello from $(date -u)!');" > $FILE
+          fi
+
+      - name: Commit & Push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add snippets/
+          git commit -m "feat: add random code snippet $(date -u)" || echo "No changes"
+          git push
